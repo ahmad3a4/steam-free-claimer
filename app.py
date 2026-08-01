@@ -5,15 +5,66 @@ Maintained by ahmad3a4 - https://github.com/ahmad3a4/steam-free-claimer
 """
 
 import time
-import json
 from flask import Flask, render_template, request, jsonify
 from steam_client import SteamClient
+from steam_auth import SteamAuth, SteamLoginError
 
 app = Flask(__name__)
 app.config["JSON_SORT_KEYS"] = False
 
 
 # ── Routes ───────────────────────────────────────────────────────────────────
+
+# ── Login endpoints ─────────────────────────────────────────────────────────
+
+@app.route("/api/login", methods=["POST"])
+def api_login():
+    """
+    Step 1: Authenticate with Steam username + password.
+    Returns 2FA info if Steam Guard is enabled, or session cookies on success.
+    """
+    data     = request.get_json(silent=True) or {}
+    username = data.get("username", "").strip()
+    password = data.get("password", "").strip()
+
+    if not username or not password:
+        return jsonify({"error": "Username and password are required."}), 400
+
+    try:
+        result = SteamAuth().begin_login(username, password)
+        return jsonify(result)
+    except SteamLoginError as exc:
+        return jsonify({"error": str(exc)}), 401
+    except Exception as exc:
+        return jsonify({"error": f"Login error: {exc}"}), 500
+
+
+@app.route("/api/login/verify", methods=["POST"])
+def api_login_verify():
+    """
+    Step 2 (if 2FA needed): Submit Steam Guard code and finalize login.
+    Returns session cookies on success.
+    """
+    data       = request.get_json(silent=True) or {}
+    client_id  = str(data.get("client_id",  ""))
+    steamid    = str(data.get("steamid",    ""))
+    request_id = str(data.get("request_id", ""))
+    code       = data.get("code",      "").strip().upper()
+    code_type  = int(data.get("code_type", 3))
+
+    if not code:
+        return jsonify({"error": "Please enter your Steam Guard code."}), 400
+
+    try:
+        result = SteamAuth().verify_2fa(client_id, steamid, request_id, code, code_type)
+        return jsonify(result)
+    except SteamLoginError as exc:
+        return jsonify({"error": str(exc)}), 401
+    except Exception as exc:
+        return jsonify({"error": f"2FA error: {exc}"}), 500
+
+
+# ── Page & game endpoints ─────────────────────────────────────────────────────
 
 @app.route("/")
 def index():

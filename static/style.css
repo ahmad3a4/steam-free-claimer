@@ -611,3 +611,66 @@ footer a:hover { color: var(--cyan); text-decoration: none; }
   .summary-stat .stat-num { font-size: 1.5rem; }
   .action-row { flex-direction: column-reverse; }
 }
+
+/* ── Login / 2FA additions ─────────────────────────────────────── */
+
+/* Text-only link button */
+.btn-text {
+  background: none;
+  border: none;
+  color: var(--text-3);
+  font-size: 0.82rem;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: color var(--transition);
+  font-family: var(--font);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.btn-text:hover { color: var(--cyan); }
+
+/* Row that holds the manual toggle link */
+.manual-toggle-row {
+  text-align: center;
+  margin-top: 18px;
+}
+
+/* Divider with text */
+.manual-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0 20px;
+  color: var(--text-3);
+  font-size: 0.8rem;
+}
+.manual-divider::before,
+.manual-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* Steam Guard / 2FA screen */
+.twofa-icon {
+  font-size: 3rem;
+  text-align: center;
+  margin-bottom: 12px;
+  filter: drop-shadow(0 0 20px rgba(61,155,255,0.4));
+}
+
+/* Large centered code input */
+.code-input {
+  text-align: center !important;
+  font-size: 1.8rem !important;
+  letter-spacing: 0.35em !important;
+  text-transform: uppercase;
+  font-weight: 700 !important;
+  padding: 16px !important;
+  background: rgba(0,0,0,0.4) !important;
+  border-color: var(--border-glow) !important;
+}
+.code-input:focus {
+  box-shadow: 0 0 0 3px rgba(61,155,255,0.15), 0 0 30px rgba(61,155,255,0.1) !important;
+}

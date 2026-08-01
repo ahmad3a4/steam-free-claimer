@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Steam Free Games Claimer — by ahmad3a4</title>
-  <meta name="description" content="Automatically find and claim free Steam games. Enter your session cookies and claim in seconds." />
+  <meta name="description" content="Sign in to Steam and automatically claim all free games. No manual cookie extraction needed." />
   <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
@@ -36,16 +36,16 @@
   <section class="hero">
     <div class="hero-badge"><span class="dot"></span>Free &amp; Open Source</div>
     <h1>Claim Free Steam Games<br><span class="gradient-text">Automatically</span></h1>
-    <p>Enter your Steam session cookies below and we'll find every currently free game and add them all to your library in seconds.</p>
+    <p>Sign in with your Steam account and we'll find every free game and add them all to your library in seconds.</p>
   </section>
 
   <!-- ── How it works ── -->
   <section class="steps" aria-label="How it works">
     <div class="step-card">
       <div class="step-num">1</div>
-      <div class="step-icon">🍪</div>
-      <h3>Get Your Cookies</h3>
-      <p>Copy two session cookies from your Steam browser session.</p>
+      <div class="step-icon">🔐</div>
+      <h3>Sign In</h3>
+      <p>Log in with your Steam username and password. Steam Guard supported.</p>
     </div>
     <div class="step-card">
       <div class="step-num">2</div>
@@ -64,58 +64,113 @@
   <!-- ── Main Tool Card ── -->
   <div class="main-card" role="main">
 
-    <!-- Phase: Input -->
-    <div class="phase active" id="phase-input">
-      <h2 class="phase-title">Enter Your Steam Cookies</h2>
-      <p class="phase-sub">Your cookies are only used to authenticate with Steam and are never stored.</p>
+    <!-- ─────────── Phase: Login ─────────── -->
+    <div class="phase active" id="phase-login">
+      <h2 class="phase-title">Sign in to Steam</h2>
+      <p class="phase-sub">Your credentials are used only to authenticate with Steam — never stored.</p>
 
-      <details class="cookie-guide" id="cookie-guide">
-        <summary>📖 How to get your cookies (30 seconds)</summary>
-        <div class="guide-body">
-          <ol>
-            <li>Open <strong>store.steampowered.com</strong> in your browser and make sure you're logged in.</li>
-            <li>Press <code>F12</code> to open DevTools, then go to the <strong>Application</strong> tab.</li>
-            <li>In the left sidebar expand <strong>Cookies</strong> → click <code>https://store.steampowered.com</code>.</li>
-            <li>Find <code>sessionid</code> and copy its <strong>Value</strong> column.</li>
-            <li>Find <code>steamLoginSecure</code> and copy its <strong>Value</strong> column.</li>
-            <li>Paste both values into the fields below.</li>
-          </ol>
-        </div>
-      </details>
+      <div class="error-msg" id="login-error" role="alert"></div>
 
-      <div class="error-msg" id="error-msg" role="alert"></div>
-
-      <form id="search-form" novalidate>
+      <form id="login-form" novalidate autocomplete="on">
         <div class="form-group">
-          <label for="sessionid">sessionid</label>
+          <label for="username">Steam Username</label>
           <div class="input-wrap">
-            <input type="password" id="sessionid" placeholder="e.g. 26688c8a86448d2e79aaccd0" autocomplete="off" spellcheck="false" />
-            <button type="button" class="toggle-vis" aria-label="Toggle visibility" title="Show / hide">👁</button>
+            <input type="text" id="username" name="username"
+                   placeholder="your_steam_username"
+                   autocomplete="username" spellcheck="false" />
           </div>
         </div>
         <div class="form-group">
-          <label for="loginSecure">steamLoginSecure</label>
+          <label for="password">Password</label>
           <div class="input-wrap">
-            <input type="password" id="loginSecure" placeholder="76561199…%7C%7CeyA…" autocomplete="off" spellcheck="false" />
-            <button type="button" class="toggle-vis" aria-label="Toggle visibility" title="Show / hide">👁</button>
+            <input type="password" id="password" name="password"
+                   placeholder="••••••••"
+                   autocomplete="current-password" />
+            <button type="button" class="toggle-vis" aria-label="Show/hide password" title="Show / hide">👁</button>
           </div>
         </div>
-        <button type="submit" class="btn-primary" id="search-btn">Search for Free Games →</button>
+        <button type="submit" class="btn-primary" id="login-btn">Sign in to Steam →</button>
       </form>
+
+      <!-- Manual cookie fallback -->
+      <p class="manual-toggle-row">
+        <button type="button" class="btn-text" id="toggle-manual">Use session cookies instead</button>
+      </p>
+
+      <div id="manual-section" style="display:none">
+        <div class="manual-divider"><span>or enter session cookies manually</span></div>
+
+        <details class="cookie-guide">
+          <summary>📖 How to get your cookies (30 seconds)</summary>
+          <div class="guide-body">
+            <ol>
+              <li>Open <strong>store.steampowered.com</strong> and make sure you're logged in.</li>
+              <li>Press <code>F12</code> → <strong>Application</strong> tab → <strong>Cookies</strong> → <code>https://store.steampowered.com</code>.</li>
+              <li>Copy the <strong>Value</strong> of <code>sessionid</code> and <code>steamLoginSecure</code>.</li>
+            </ol>
+          </div>
+        </details>
+
+        <form id="cookie-form" novalidate>
+          <div class="form-group">
+            <label for="sessionid">sessionid</label>
+            <div class="input-wrap">
+              <input type="password" id="sessionid" placeholder="26688c8a86448d2e79aaccd0" autocomplete="off" spellcheck="false" />
+              <button type="button" class="toggle-vis" aria-label="Toggle visibility" title="Show / hide">👁</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="loginSecure">steamLoginSecure</label>
+            <div class="input-wrap">
+              <input type="password" id="loginSecure" placeholder="76561199…%7C%7CeyA…" autocomplete="off" spellcheck="false" />
+              <button type="button" class="toggle-vis" aria-label="Toggle visibility" title="Show / hide">👁</button>
+            </div>
+          </div>
+          <button type="submit" class="btn-primary">Search with Cookies →</button>
+        </form>
+      </div>
     </div>
 
-    <!-- Phase: Loading -->
+    <!-- ─────────── Phase: Steam Guard 2FA ─────────── -->
+    <div class="phase" id="phase-2fa">
+      <div class="twofa-icon" aria-hidden="true">🛡️</div>
+      <h2 class="phase-title">Steam Guard</h2>
+      <p class="phase-sub" id="twofa-sub">Check your email for a Steam Guard code.</p>
+
+      <div class="error-msg" id="twofa-error" role="alert"></div>
+
+      <form id="twofa-form" novalidate>
+        <div class="form-group">
+          <label for="twofa-code">Steam Guard Code</label>
+          <div class="input-wrap input-wrap-code">
+            <input type="text" id="twofa-code" name="one-time-code"
+                   placeholder="ABCDE"
+                   maxlength="8"
+                   autocomplete="one-time-code"
+                   spellcheck="false"
+                   class="code-input" />
+          </div>
+        </div>
+        <button type="submit" class="btn-primary" id="verify-btn">Verify &amp; Continue →</button>
+      </form>
+
+      <p class="manual-toggle-row">
+        <button type="button" class="btn-text" id="back-to-login">← Back to login</button>
+      </p>
+    </div>
+
+    <!-- ─────────── Phase: Loading ─────────── -->
     <div class="phase" id="phase-loading">
       <div class="loading-center">
         <div class="spinner" role="status" aria-label="Loading"></div>
         <div>
-          <div class="loading-text" id="loading-text">Searching Steam store…</div>
-          <div class="loading-sub" id="loading-sub">This may take a few seconds</div>
+          <div class="loading-text" id="loading-text">Working…</div>
+          <div class="loading-sub"  id="loading-sub">This may take a few seconds</div>
         </div>
       </div>
     </div>
 
-    <!-- Phase: Results -->
+    <!-- ─────────── Phase: Results ─────────── -->
     <div class="phase" id="phase-results">
       <div class="results-header">
         <h2 class="phase-title" style="margin-bottom:0">Free Games Found</h2>
@@ -130,7 +185,7 @@
 
       <!-- Action buttons -->
       <div class="action-row" id="action-row" style="display:none">
-        <button class="btn-ghost" id="reset-btn">← Back</button>
+        <button class="btn-ghost" id="reset-btn">← Sign out</button>
         <button class="btn-success" id="claim-btn">Claim All →</button>
       </div>
     </div>
@@ -143,7 +198,9 @@
        <a href="https://github.com/ahmad3a4/steam-free-claimer" target="_blank">View on GitHub</a> ·
        <a href="https://github.com/ahmad3a4/steam-free-claimer/blob/main/LICENSE" target="_blank">GPL-3.0</a>
     </p>
-    <p style="margin-top:6px;font-size:0.75rem;">Your cookies are sent to the local Flask server only and are never stored or logged.</p>
+    <p style="margin-top:6px;font-size:0.75rem;">
+      Credentials are only sent to the local Flask server running on your machine. Nothing is ever logged or stored externally.
+    </p>
   </footer>
 
 </div><!-- /page-wrap -->
