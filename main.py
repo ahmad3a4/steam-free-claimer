@@ -1,6 +1,6 @@
 """
-main.py — Steam Free Games Claimer · Entry Point
-Maintained by ahmad3a4 · https://github.com/ahmad3a4/steam-free-claimer
+main.py -- Steam Free Games Claimer - Entry Point
+Maintained by ahmad3a4 - https://github.com/ahmad3a4/steam-free-claimer
 
 Usage:
     python main.py               # Find and claim all free games
@@ -10,6 +10,10 @@ Usage:
 import os
 import sys
 import time
+import io
+
+# Force UTF-8 output on Windows so box-drawing chars print correctly
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
 from dotenv import load_dotenv
 from colorama import init, Fore, Style
@@ -30,13 +34,13 @@ DIM    = Style.DIM
 RESET  = Style.RESET_ALL
 
 BANNER = f"""
-{CYAN}╔══════════════════════════════════════════════════╗
-║                                                  ║
-║  {GREEN}🎮  Steam Free Games Claimer{CYAN}                     ║
-║  {WHITE}    Automatically claim free Steam games{CYAN}         ║
-║                                                  ║
-║  {DIM}by ahmad3a4 · github.com/ahmad3a4{CYAN}              ║
-╚══════════════════════════════════════════════════╝{RESET}
+{CYAN}+==================================================+
+|                                                  |
+|  {GREEN}[*]  Steam Free Games Claimer{CYAN}                    |
+|  {WHITE}     Automatically claim free Steam games{CYAN}        |
+|                                                  |
+|  {DIM}by ahmad3a4 - github.com/ahmad3a4{CYAN}              |
++==================================================+{RESET}
 """
 
 def print_banner() -> None:
@@ -52,15 +56,15 @@ def status(msg: str, icon: str = "•") -> None:
 
 
 def ok(msg: str) -> None:
-    print(f"  {GREEN}✅{RESET}  {WHITE}{msg}{RESET}")
+    print(f"  {GREEN}[+]{RESET}  {WHITE}{msg}{RESET}")
 
 
 def warn(msg: str) -> None:
-    print(f"  {YELLOW}⚠ {RESET}  {WHITE}{msg}{RESET}")
+    print(f"  {YELLOW}[!]{RESET}  {WHITE}{msg}{RESET}")
 
 
 def err(msg: str) -> None:
-    print(f"  {RED}❌{RESET}  {WHITE}{msg}{RESET}")
+    print(f"  {RED}[-]{RESET}  {WHITE}{msg}{RESET}")
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -140,7 +144,7 @@ def main() -> None:
 
     # ── Auth check ───────────────────────────────────────────────
     print()
-    status("Verifying Steam session...", "🔑")
+    status("Verifying Steam session...", ">>")
     if not client.is_authenticated():
         err("Authentication failed. Your cookies may be expired or invalid.")
         err("Log out and back in to Steam, then copy fresh cookies.")
@@ -149,7 +153,7 @@ def main() -> None:
 
     # ── Game discovery ───────────────────────────────────────────
     print()
-    status("Searching Steam for free games...", "🔍")
+    status("Searching Steam for free games...", ">>")
     games = client.get_free_games()
 
     if not games:
@@ -190,7 +194,7 @@ def main() -> None:
                 ok(f"Claimed!  (sub #{pkg_id})")
                 claimed += 1
             elif msg == "already_owned":
-                status(f"Already in library  (sub #{pkg_id})", "📚")
+                status(f"Already in library  (sub #{pkg_id})", "**")
                 already_owned += 1
             else:
                 err(f"Could not claim  (sub #{pkg_id}  —  {msg})")
@@ -199,12 +203,12 @@ def main() -> None:
     # ── Summary ──────────────────────────────────────────────────
     print()
     print(divider("═"))
-    print(f"\n  {GREEN}🎮  All done!{RESET}\n")
-    print(f"    {GREEN}✅  Claimed       : {claimed}{RESET}")
-    print(f"    {CYAN}📚  Already owned : {already_owned}{RESET}")
-    print(f"    {YELLOW}⏭   Skipped       : {skipped}{RESET}")
+    print(f"\n  {GREEN}[DONE] All done!{RESET}\n")
+    print(f"    {GREEN}[+]  Claimed       : {claimed}{RESET}")
+    print(f"    {CYAN}[*]  Already owned : {already_owned}{RESET}")
+    print(f"    {YELLOW}[>]  Skipped       : {skipped}{RESET}")
     if failed:
-        print(f"    {RED}❌  Failed        : {failed}{RESET}")
+        print(f"    {RED}[-]  Failed        : {failed}{RESET}")
     print()
     print(f"  {WHITE}Open your Steam library to see new additions!{RESET}")
     print(divider("═"))

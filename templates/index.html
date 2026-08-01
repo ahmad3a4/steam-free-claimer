@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Steam Free Games Claimer — by ahmad3a4</title>
+  <meta name="description" content="Automatically find and claim free Steam games. Enter your session cookies and claim in seconds." />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+<!-- Animated background orbs -->
+<div class="bg-orbs" aria-hidden="true">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+</div>
+
+<div class="page-wrap">
+
+  <!-- ── Header ── -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🎮</div>
+      <span>Steam Free Claimer</span>
+    </div>
+    <a href="https://github.com/ahmad3a4/steam-free-claimer" target="_blank" class="gh-btn" id="github-link">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+      </svg>
+      ahmad3a4
+    </a>
+  </header>
+
+  <!-- ── Hero ── -->
+  <section class="hero">
+    <div class="hero-badge"><span class="dot"></span>Free &amp; Open Source</div>
+    <h1>Claim Free Steam Games<br><span class="gradient-text">Automatically</span></h1>
+    <p>Enter your Steam session cookies below and we'll find every currently free game and add them all to your library in seconds.</p>
+  </section>
+
+  <!-- ── How it works ── -->
+  <section class="steps" aria-label="How it works">
+    <div class="step-card">
+      <div class="step-num">1</div>
+      <div class="step-icon">🍪</div>
+      <h3>Get Your Cookies</h3>
+      <p>Copy two session cookies from your Steam browser session.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">2</div>
+      <div class="step-icon">🔍</div>
+      <h3>We Search Steam</h3>
+      <p>We scan the Steam store for all 100%-off promotions live.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">3</div>
+      <div class="step-icon">✅</div>
+      <h3>Games Added</h3>
+      <p>Free games are instantly added to your Steam library.</p>
+    </div>
+  </section>
+
+  <!-- ── Main Tool Card ── -->
+  <div class="main-card" role="main">
+
+    <!-- Phase: Input -->
+    <div class="phase active" id="phase-input">
+      <h2 class="phase-title">Enter Your Steam Cookies</h2>
+      <p class="phase-sub">Your cookies are only used to authenticate with Steam and are never stored.</p>
+
+      <details class="cookie-guide" id="cookie-guide">
+        <summary>📖 How to get your cookies (30 seconds)</summary>
+        <div class="guide-body">
+          <ol>
+            <li>Open <strong>store.steampowered.com</strong> in your browser and make sure you're logged in.</li>
+            <li>Press <code>F12</code> to open DevTools, then go to the <strong>Application</strong> tab.</li>
+            <li>In the left sidebar expand <strong>Cookies</strong> → click <code>https://store.steampowered.com</code>.</li>
+            <li>Find <code>sessionid</code> and copy its <strong>Value</strong> column.</li>
+            <li>Find <code>steamLoginSecure</code> and copy its <strong>Value</strong> column.</li>
+            <li>Paste both values into the fields below.</li>
+          </ol>
+        </div>
+      </details>
+
+      <div class="error-msg" id="error-msg" role="alert"></div>
+
+      <form id="search-form" novalidate>
+        <div class="form-group">
+          <label for="sessionid">sessionid</label>
+          <div class="input-wrap">
+            <input type="password" id="sessionid" placeholder="e.g. 26688c8a86448d2e79aaccd0" autocomplete="off" spellcheck="false" />
+            <button type="button" class="toggle-vis" aria-label="Toggle visibility" title="Show / hide">👁</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="loginSecure">steamLoginSecure</label>
+          <div class="input-wrap">
+            <input type="password" id="loginSecure" placeholder="76561199…%7C%7CeyA…" autocomplete="off" spellcheck="false" />
+            <button type="button" class="toggle-vis" aria-label="Toggle visibility" title="Show / hide">👁</button>
+          </div>
+        </div>
+        <button type="submit" class="btn-primary" id="search-btn">Search for Free Games →</button>
+      </form>
+    </div>
+
+    <!-- Phase: Loading -->
+    <div class="phase" id="phase-loading">
+      <div class="loading-center">
+        <div class="spinner" role="status" aria-label="Loading"></div>
+        <div>
+          <div class="loading-text" id="loading-text">Searching Steam store…</div>
+          <div class="loading-sub" id="loading-sub">This may take a few seconds</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase: Results -->
+    <div class="phase" id="phase-results">
+      <div class="results-header">
+        <h2 class="phase-title" style="margin-bottom:0">Free Games Found</h2>
+        <span class="results-count" id="results-count"></span>
+      </div>
+
+      <!-- Summary bar (shown after claiming) -->
+      <div class="summary-bar" id="summary-bar" style="display:none"></div>
+
+      <!-- Game list -->
+      <div class="games-list" id="games-list" role="list"></div>
+
+      <!-- Action buttons -->
+      <div class="action-row" id="action-row" style="display:none">
+        <button class="btn-ghost" id="reset-btn">← Back</button>
+        <button class="btn-success" id="claim-btn">Claim All →</button>
+      </div>
+    </div>
+
+  </div><!-- /main-card -->
+
+  <!-- ── Footer ── -->
+  <footer>
+    <p>Made by <a href="https://github.com/ahmad3a4" target="_blank">ahmad3a4</a> ·
+       <a href="https://github.com/ahmad3a4/steam-free-claimer" target="_blank">View on GitHub</a> ·
+       <a href="https://github.com/ahmad3a4/steam-free-claimer/blob/main/LICENSE" target="_blank">GPL-3.0</a>
+    </p>
+    <p style="margin-top:6px;font-size:0.75rem;">Your cookies are sent to the local Flask server only and are never stored or logged.</p>
+  </footer>
+
+</div><!-- /page-wrap -->
+
+<script src="/static/app.js"></script>
+</body>
+</html>
