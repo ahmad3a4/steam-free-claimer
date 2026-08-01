@@ -4,6 +4,7 @@ Flask backend that handles Steam API calls server-side (bypassing browser CORS).
 Maintained by ahmad3a4 - https://github.com/ahmad3a4/steam-free-claimer
 """
 
+import os
 import time
 from flask import Flask, render_template, request, jsonify
 from steam_client import SteamClient
@@ -164,7 +165,13 @@ def api_claim():
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    print("\n  Steam Free Games Claimer - Web App")
-    print("  by ahmad3a4 - github.com/ahmad3a4/steam-free-claimer")
-    print("\n  Running at: http://127.0.0.1:5000\n")
-    app.run(debug=True, port=5000)
+    port       = int(os.environ.get("PORT", 5000))
+    production = os.environ.get("PORT") is not None
+    host       = "0.0.0.0" if production else "127.0.0.1"
+
+    if not production:
+        print("\n  Steam Free Games Claimer - Web App")
+        print("  by ahmad3a4 - github.com/ahmad3a4/steam-free-claimer")
+        print(f"\n  Running at: http://127.0.0.1:{port}\n")
+
+    app.run(debug=not production, host=host, port=port)

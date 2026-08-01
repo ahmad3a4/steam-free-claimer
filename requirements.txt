@@ -5,3 +5,4 @@ colorama>=0.4.6
 lxml>=4.9.0
 flask>=3.0.0
 rsa>=4.9
+gunicorn>=21.0.0
