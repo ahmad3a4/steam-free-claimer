@@ -209,24 +209,22 @@ class SteamAuth:
             except Exception:
                 pass
 
-        # Extract cookies from the session
-        login_secure  = None
+        # The transfer_info POSTs above don't reliably yield steamLoginSecure
+        # via HTTP Set-Cookie headers (that bridge appears to rely on
+        # client-side JS in a real browser), so fall back to building it
+        # directly from the raw access token below — that's the format
+        # Steam itself uses (steamid||JWT).
         final_session = sessionid
-
         for ck in s.cookies:
-            if ck.name == "steamLoginSecure":
-                login_secure = ck.value
-            elif ck.name == "sessionid" and "steampowered.com" in (ck.domain or ""):
+            if ck.name == "sessionid" and "steampowered.com" in (ck.domain or ""):
                 final_session = ck.value
 
-        # Fallback: build steamLoginSecure from JWT access token
-        if not login_secure:
-            steam_id    = finalize.get("steamID", "")
-            access_tok  = poll.get("access_token", "")
-            if steam_id and access_tok:
-                login_secure = urllib.parse.quote(
-                    f"{steam_id}||{access_tok}", safe=""
-                )
+        access_token = poll.get("access_token", "")
+        steam_id     = finalize.get("steamID", "")
+        login_secure = (
+            urllib.parse.quote(f"{steam_id}||{access_token}", safe="")
+            if steam_id and access_token else None
+        )
 
         if not login_secure:
             raise SteamLoginError(
@@ -235,6 +233,6 @@ class SteamAuth:
             )
 
         return {
-            "sessionid":       final_session,
+            "sessionid":        final_session,
             "steamLoginSecure": login_secure,
         }

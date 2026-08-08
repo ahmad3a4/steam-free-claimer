@@ -12,7 +12,7 @@ Automatically find and claim **free Steam games** — no manual cookie hunting n
 - 🛡️ **Steam Guard supported** — handles both email and mobile authenticator 2FA
 - 🔍 **Smart game detection** — scans Steam store for all active 100%-off promotions
 - 🎮 **One-click claiming** — adds all free packages directly to your Steam library
-- 🌐 **Web interface** — beautiful dark UI anyone can use in a browser
+- 🌐 **Web interface** — dark UI, works in any browser
 - 💻 **CLI tool** — original terminal version with `--check-only` mode
 - 🔒 **Privacy first** — credentials never stored or logged, RSA-encrypted before leaving your machine
 - ⏱️ **Rate-limited** — respectful delays between requests
@@ -70,13 +70,19 @@ python main.py
 python main.py --check-only
 ```
 
-The first run will ask for your Steam cookies and optionally save them to `.env`:
+On first run you'll be asked how to sign in:
 
 ```
-sessionid         > 26688c8a...
-steamLoginSecure  > 76561199...
-Save to .env? [y/N]: y
+How would you like to sign in?
+  1) Steam username + password  (recommended)
+  2) Paste cookies manually
+
+Steam username > your_username
+Steam password >
+Steam Guard code (email) > ABCDE
 ```
+
+Username/password (option 1) handles everything automatically, including Steam Guard. Option 2 is a fallback if you'd rather paste your `sessionid` and `steamLoginSecure` cookies from a logged-in browser session. Either way, you can save the resulting session to `.env` so you're not prompted again next time (until it expires).
 
 ---
 
@@ -92,7 +98,7 @@ steam-free-claimer/
 │   └── index.html   — Web UI
 ├── static/
 │   ├── style.css    — Dark glassmorphism theme
-│   └── app.js       — Frontend logic
+│   └── app.js        — Frontend logic
 ├── Procfile         — For Railway / Render deployment
 ├── requirements.txt
 ├── .env.example
@@ -114,6 +120,10 @@ Your credentials go through Steam's **official authentication API** directly:
 ```
 
 **Nothing is stored on any server.** The Flask server runs locally on your machine. All communication is directly between your machine and Steam's servers.
+
+### How claiming actually works
+
+Claiming replicates the exact request Steam's own "Add to Account" button sends on a free-game store page — a session-authenticated `POST` to `store.steampowered.com/freelicense/addfreelicense/`. The response is inspected for Steam's real success marker (a `Success!` confirmation block) rather than assumed from the HTTP status code, so a failed or expired-session claim is reported honestly instead of silently appearing to succeed.
 
 ---
 
@@ -142,30 +152,40 @@ The app is ready for one-click deployment to **Railway** or **Render**:
 
 ```
 +==================================================+
-|  [*]  Steam Free Games Claimer                   |
-|       by ahmad3a4 - github.com/ahmad3a4          |
+|                                                  |
+|  [*]  Steam Free Games Claimer                    |
+|       Automatically claim free Steam games        |
+|                                                  |
+|  by ahmad3a4 - github.com/ahmad3a4              |
 +==================================================+
 
-  [+]  Loaded Steam cookies from .env
-  >>   Verifying Steam session...
+  [+]  Loaded Steam session from .env
+
+  >>  Verifying Steam session...
   [+]  Authenticated successfully!
 
-  >>   Searching Steam for free games...
-  [+]  Found 3 free game(s)!
+  >>  Searching Steam for free games...
 
-  [ 1/ 3] Some Action Game
-  [+]  Claimed!  (sub #123456)
+  [+]  Found 2 free game(s)!
 
-  [ 2/ 3] Another Free RPG
-  **   Already in library  (sub #789012)
+════════════════════════════════════════════════════════
 
-  [ 3/ 3] Indie Platformer Bundle
-  [!]  No free packages found — skipped
+  [ 1/2] Moonlighter
+  [+]  Claimed!  (sub #1706211)
+
+  [ 2/2] Breathedge
+  [+]  Claimed!  (sub #1759598)
+
+════════════════════════════════════════════════════════
 
   [DONE] All done!
-    [+]  Claimed       : 1
-    [*]  Already owned : 1
-    [>]  Skipped       : 1
+
+    [+]  Claimed       : 2
+    [*]  Already owned : 0
+    [>]  Skipped       : 0
+
+  Open your Steam library to see new additions!
+════════════════════════════════════════════════════════
 ```
 
 ---
@@ -186,6 +206,9 @@ A: Yes — use Windows Task Scheduler or a cron job to run `python main.py` dail
 
 **Q: Does it work with Family Sharing / limited accounts?**
 A: It claims packages the same way Steam's own website does, so it should work on any standard account.
+
+**Q: I only have `sessionid` and `steamLoginSecure` cookies — is that enough?**
+A: Yes. Both the web app and the CLI's manual-cookie fallback only need those two — no other cookies or tokens are required to search or claim.
 
 ---
 

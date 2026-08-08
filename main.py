@@ -75,23 +75,58 @@ def _how_to_get_cookies() -> None:
     print(f"\n{YELLOW}  How to get your Steam cookies:{RESET}")
     print(f"    1. Open {CYAN}store.steampowered.com{RESET} and log in")
     print(f"    2. Press {CYAN}F12{RESET} → {CYAN}Application{RESET} tab → {CYAN}Cookies{RESET}")
-    print(f"       → {CYAN}https://store.steampowered.com{RESET}")
-    print(f"    3. Copy the values of:")
+    print(f"       → {CYAN}https://store.steampowered.com{RESET} — copy:")
     print(f"       • {YELLOW}sessionid{RESET}")
     print(f"       • {YELLOW}steamLoginSecure{RESET}")
     print()
 
 
-def get_credentials() -> tuple[str, str]:
-    """Return (session_id, login_secure) from .env or interactive prompt."""
-    session_id   = os.getenv("STEAM_SESSION_ID", "").strip()
-    login_secure = os.getenv("STEAM_LOGIN_SECURE", "").strip()
+def _save_env(creds: dict) -> None:
+    save = input(f"\n  {YELLOW}Save to .env for next time? [y/N]:{RESET} ").strip().lower()
+    if save != "y":
+        return
+    with open(".env", "w") as fh:
+        fh.write(f"STEAM_SESSION_ID={creds['session_id']}\n")
+        fh.write(f"STEAM_LOGIN_SECURE={creds['login_secure']}\n")
+    ok("Saved to .env")
 
-    if session_id and login_secure:
-        ok("Loaded Steam cookies from .env")
-        return session_id, login_secure
 
-    warn("Steam cookies not found in .env")
+def _login_with_password() -> dict:
+    """Log in with Steam username/password (+ Steam Guard) via steam_auth.py."""
+    import getpass
+    from steam_auth import SteamAuth, SteamLoginError
+
+    print()
+    username = input(f"  {CYAN}Steam username >{RESET} ").strip()
+    password = getpass.getpass(f"  {CYAN}Steam password >{RESET} ")
+
+    auth = SteamAuth()
+    try:
+        result = auth.begin_login(username, password)
+
+        if result.get("need_2fa"):
+            kind   = "mobile authenticator" if result["type"] == "mobile" else "email"
+            code   = input(f"  {CYAN}Steam Guard code ({kind}) >{RESET} ").strip()
+            result = auth.verify_2fa(
+                result["client_id"], result["steamid"], result["request_id"],
+                code, result["code_type"],
+            )
+    except SteamLoginError as exc:
+        err(str(exc))
+        sys.exit(1)
+    except Exception as exc:
+        err(f"Login failed: {exc}")
+        sys.exit(1)
+
+    ok("Logged in successfully!")
+
+    creds = {"session_id": result["sessionid"], "login_secure": result["steamLoginSecure"]}
+    _save_env(creds)
+    return creds
+
+
+def _login_with_cookies() -> dict:
+    """Manually-pasted-cookie fallback."""
     _how_to_get_cookies()
 
     session_id   = input(f"  {CYAN}sessionid        >{RESET} ").strip()
@@ -101,14 +136,29 @@ def get_credentials() -> tuple[str, str]:
         err("Both cookies are required. Exiting.")
         sys.exit(1)
 
-    save = input(f"\n  {YELLOW}Save to .env for next time? [y/N]:{RESET} ").strip().lower()
-    if save == "y":
-        with open(".env", "w") as fh:
-            fh.write(f"STEAM_SESSION_ID={session_id}\n")
-            fh.write(f"STEAM_LOGIN_SECURE={login_secure}\n")
-        ok("Saved to .env")
+    creds = {"session_id": session_id, "login_secure": login_secure}
+    _save_env(creds)
+    return creds
 
-    return session_id, login_secure
+
+def get_credentials() -> dict:
+    """Return Steam session credentials from .env, or prompt interactively."""
+    session_id   = os.getenv("STEAM_SESSION_ID", "").strip()
+    login_secure = os.getenv("STEAM_LOGIN_SECURE", "").strip()
+
+    if session_id and login_secure:
+        ok("Loaded Steam session from .env")
+        return {"session_id": session_id, "login_secure": login_secure}
+
+    warn("No usable Steam session found in .env")
+    print(f"\n  {YELLOW}How would you like to sign in?{RESET}")
+    print(f"    {CYAN}1{RESET}) Steam username + password  {DIM}(recommended){RESET}")
+    print(f"    {CYAN}2{RESET}) Paste cookies manually")
+    choice = input(f"\n  {CYAN}> {RESET}").strip()
+
+    if choice == "2":
+        return _login_with_cookies()
+    return _login_with_password()
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -137,10 +187,10 @@ def main() -> None:
     check_only = "--check-only" in sys.argv
 
     # ── Credentials ──────────────────────────────────────────────
-    session_id, login_secure = get_credentials()
+    creds = get_credentials()
 
     from steam_client import SteamClient
-    client = SteamClient(session_id, login_secure)
+    client = SteamClient(creds["session_id"], creds["login_secure"])
 
     # ── Auth check ───────────────────────────────────────────────
     print()

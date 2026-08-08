@@ -3,6 +3,7 @@ steam_client.py — Steam HTTP client for Free Games Claimer
 Maintained by ahmad3a4 · https://github.com/ahmad3a4/steam-free-claimer
 """
 
+import re
 import time
 import requests
 from bs4 import BeautifulSoup
@@ -26,13 +27,12 @@ class SteamClient:
         self.session = requests.Session()
         self.session.headers.update(self.HEADERS)
 
-        # Set required Steam cookies
         for name, value in [
-            ("sessionid",        session_id),
-            ("steamLoginSecure", login_secure),
+            ("sessionid",            session_id),
+            ("steamLoginSecure",     login_secure),
             ("wants_mature_content", "1"),
-            ("birthtime",        "-2208988800"),
-            ("lastagecheckage",  "1-0-2000"),
+            ("birthtime",            "-2208988800"),
+            ("lastagecheckage",      "1-0-2000"),
         ]:
             self.session.cookies.set(name, value, domain=".steampowered.com")
 
@@ -125,7 +125,9 @@ class SteamClient:
         try:
             resp = self.session.get(
                 f"{self.BASE_URL}/api/appdetails/",
-                params={"appids": appid, "cc": "us", "l": "english", "filters": "package_groups"},
+                # NOTE: filters=package_groups is broken on Steam's end — it returns
+                # "data": [] instead of {"package_groups": [...]}. Fetch unfiltered.
+                params={"appids": appid, "cc": "us", "l": "english"},
                 timeout=10,
             )
             resp.raise_for_status()
@@ -137,8 +139,12 @@ class SteamClient:
         if not app_blob.get("success"):
             return []
 
+        app_data = app_blob.get("data", {})
+        if not isinstance(app_data, dict):
+            return []
+
         free_pkg_ids = []
-        for group in app_blob.get("data", {}).get("package_groups", []):
+        for group in app_data.get("package_groups", []):
             for sub in group.get("subs", []):
                 is_free_flag  = sub.get("is_free_license", False)
                 price_cents   = sub.get("price_in_cents_with_discount", 1)
@@ -155,21 +161,26 @@ class SteamClient:
         """
         Attempt to add a free package to the Steam account.
 
+        This mirrors the exact form the "Add to Account" button submits on a
+        live free-game store page: a plain cookie-authenticated POST to
+        /freelicense/addfreelicense/ (found by inspecting the real page HTML —
+        NOT /checkout/addfreelicense, which is a different, unrelated
+        endpoint that just bounces around without ever processing anything).
+
         Returns (success: bool, message: str).
-        Possible messages: "claimed", "already_owned", "error"
+        Possible messages: "claimed", "already_owned", "error (...)"
         """
         try:
             resp = self.session.post(
-                f"{self.BASE_URL}/checkout/addfreelicense",
+                f"{self.BASE_URL}/freelicense/addfreelicense/",
                 data={
+                    "action":    "add_to_cart",
                     "sessionid": self.session_id,
                     "subid":     sub_id,
-                    "action":    "add_to_cart",
                 },
                 headers={
                     "Referer": f"{self.BASE_URL}/",
                     "Origin":  self.BASE_URL,
-                    "Content-Type": "application/x-www-form-urlencoded",
                 },
                 timeout=15,
                 allow_redirects=True,
@@ -177,14 +188,31 @@ class SteamClient:
         except requests.RequestException as exc:
             return False, f"error ({exc})"
 
-        body = resp.text.lower()
+        if resp.status_code != 200:
+            return False, f"error (HTTP {resp.status_code})"
 
-        # Steam returns a purchase-receipt page on success
-        if "purchasereceiptinfo" in body or resp.status_code in (200,) and "error" not in body[:500]:
+        body = resp.text
+
+        # Steam's generic error page for a rejected request (e.g. bad/expired
+        # session) — shown as a normal 200 page, not a distinct status code.
+        if "Site Error" in body or "Oops, sorry" in body:
+            return False, "error (Steam rejected the request — session may be expired)"
+
+        # Confirmed by an actual successful claim — Steam's real success page
+        # (title "Purchase") contains this exact block:
+        #   <h2>Success!</h2>
+        #   <div class="add_free_content_success_area">
+        #     <h3>{Game} is now registered to your account on Steam.</h3>
+        if "add_free_content_success_area" in body:
             return True, "claimed"
 
-        # Already in library
-        if "already" in body or "you already" in body:
+        low = body.lower()
+        if "already" in low and ("own" in low or "library" in low or "account" in low):
             return False, "already_owned"
 
-        return False, "error"
+        # Unrecognized shape — don't guess either way; surface something
+        # diagnosable (the page's own heading, if it has one) instead of a
+        # generic message.
+        heading_match = re.search(r'<h2[^>]*class="pageheader"[^>]*>(.*?)</h2>', body, re.S)
+        snippet = heading_match.group(1).strip() if heading_match else body[:120].replace("\n", " ").strip()
+        return False, f"error (unrecognized response: {snippet!r})"
